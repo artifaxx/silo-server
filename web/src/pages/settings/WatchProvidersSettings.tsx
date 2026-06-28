@@ -215,24 +215,35 @@ function AuthCodeBlock({
 function APIKeyBlock({
   displayName,
   pending,
+  requiresBaseURL = false,
   onSubmit,
   onCancel,
 }: {
   displayName: string;
   pending: boolean;
-  onSubmit: (apiKey: string) => void;
+  requiresBaseURL?: boolean;
+  onSubmit: (input: { apiKey: string; baseUrl?: string }) => void;
   onCancel: () => void;
 }) {
-  const [value, setValue] = useState("");
-  const trimmed = value.trim();
+  const [apiKey, setApiKey] = useState("");
+  const [baseUrl, setBaseUrl] = useState("");
+  const trimmedKey = apiKey.trim();
+  const trimmedBaseUrl = baseUrl.trim();
+  const canSubmit = requiresBaseURL
+    ? trimmedKey.length > 0 && trimmedBaseUrl.length > 0
+    : trimmedKey.length > 0;
 
   return (
     <div className="border-primary/30 bg-primary/5 rounded-xl border border-dashed p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-sm font-medium">Paste your {displayName} API key</div>
+          <div className="text-sm font-medium">
+            {requiresBaseURL ? `Connect to ${displayName}` : `Paste your ${displayName} API key`}
+          </div>
           <div className="text-muted-foreground mt-0.5 text-xs leading-snug">
-            Find it under your account settings on the {displayName} site.
+            {requiresBaseURL
+              ? "Enter your Yamtrack server URL and the Jellyfin webhook token from Integrations settings."
+              : `Find it under your account settings on the ${displayName} site.`}
           </div>
         </div>
         <Button
@@ -245,26 +256,44 @@ function APIKeyBlock({
           <X className="h-4 w-4" />
         </Button>
       </div>
-      <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-stretch">
-        <Input
-          type="password"
-          autoComplete="off"
-          spellCheck={false}
-          placeholder="API key"
-          value={value}
-          onChange={(event) => setValue(event.target.value)}
-          className="font-mono"
-        />
-        <Button
-          type="button"
-          size="sm"
-          disabled={pending || trimmed.length === 0}
-          onClick={() => onSubmit(trimmed)}
-          className="sm:flex-none"
-        >
-          {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
-          Connect
-        </Button>
+      <div className="mt-3 flex flex-col gap-2">
+        {requiresBaseURL ? (
+          <Input
+            type="url"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder="https://yamtrack.example.com"
+            value={baseUrl}
+            onChange={(event) => setBaseUrl(event.target.value)}
+          />
+        ) : null}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+          <Input
+            type="password"
+            autoComplete="off"
+            spellCheck={false}
+            placeholder={requiresBaseURL ? "Webhook token" : "API key"}
+            value={apiKey}
+            onChange={(event) => setApiKey(event.target.value)}
+            className="font-mono"
+          />
+          <Button
+            type="button"
+            size="sm"
+            disabled={pending || !canSubmit}
+            onClick={() =>
+              onSubmit(
+                requiresBaseURL
+                  ? { apiKey: trimmedKey, baseUrl: trimmedBaseUrl }
+                  : { apiKey: trimmedKey },
+              )
+            }
+            className="sm:flex-none"
+          >
+            {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+            Connect
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -454,12 +483,15 @@ function WatchProviderCard({ providerKey }: { providerKey: string }) {
     });
   };
 
-  const handleSubmitAPIKey = (apiKey: string) => {
-    connectAPIKey.mutate(apiKey, {
-      onSuccess: () => {
-        setApiKeyPrompt(false);
+  const handleSubmitAPIKey = (input: { apiKey: string; baseUrl?: string }) => {
+    connectAPIKey.mutate(
+      input.baseUrl ? { api_key: input.apiKey, base_url: input.baseUrl } : input.apiKey,
+      {
+        onSuccess: () => {
+          setApiKeyPrompt(false);
+        },
       },
-    });
+    );
   };
 
   const handleCancelAPIKey = () => {
@@ -550,6 +582,7 @@ function WatchProviderCard({ providerKey }: { providerKey: string }) {
           <APIKeyBlock
             displayName={displayName}
             pending={connectAPIKey.isPending}
+            requiresBaseURL={providerKey === "yamtrack"}
             onSubmit={handleSubmitAPIKey}
             onCancel={handleCancelAPIKey}
           />
@@ -598,38 +631,50 @@ function WatchProviderCard({ providerKey }: { providerKey: string }) {
           </div>
 
           <div className="grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
-            <ToggleRow
-              id={`watch-provider-${providerKey}-import-watched`}
-              label="Import watched history"
-              description={`Bring completed ${displayName} plays into this profile.`}
-              checked={connection.import_watched_enabled}
-              disabled={isBusy}
-              onChange={(checked) => updateConnection.mutate({ import_watched_enabled: checked })}
-            />
-            <ToggleRow
-              id={`watch-provider-${providerKey}-import-progress`}
-              label="Import paused progress"
-              description={`Use newer ${displayName} resume points when local progress is older.`}
-              checked={connection.import_progress_enabled}
-              disabled={isBusy}
-              onChange={(checked) => updateConnection.mutate({ import_progress_enabled: checked })}
-            />
-            <ToggleRow
-              id={`watch-provider-${providerKey}-export-watched`}
-              label="Send watched changes"
-              description="Send local watched marks and completed plays to this provider."
-              checked={connection.export_watched_enabled}
-              disabled={isBusy}
-              onChange={(checked) => updateConnection.mutate({ export_watched_enabled: checked })}
-            />
-            <ToggleRow
-              id={`watch-provider-${providerKey}-export-unwatched`}
-              label="Send unwatched changes"
-              description="When you mark something unwatched, remove matching history from this provider."
-              checked={connection.export_unwatched_enabled}
-              disabled={isBusy}
-              onChange={(checked) => updateConnection.mutate({ export_unwatched_enabled: checked })}
-            />
+            {connection.capabilities.import_watched ? (
+              <ToggleRow
+                id={`watch-provider-${providerKey}-import-watched`}
+                label="Import watched history"
+                description={`Bring completed ${displayName} plays into this profile.`}
+                checked={connection.import_watched_enabled}
+                disabled={isBusy}
+                onChange={(checked) => updateConnection.mutate({ import_watched_enabled: checked })}
+              />
+            ) : null}
+            {connection.capabilities.import_progress ? (
+              <ToggleRow
+                id={`watch-provider-${providerKey}-import-progress`}
+                label="Import paused progress"
+                description={`Use newer ${displayName} resume points when local progress is older.`}
+                checked={connection.import_progress_enabled}
+                disabled={isBusy}
+                onChange={(checked) =>
+                  updateConnection.mutate({ import_progress_enabled: checked })
+                }
+              />
+            ) : null}
+            {connection.capabilities.export_watched ? (
+              <ToggleRow
+                id={`watch-provider-${providerKey}-export-watched`}
+                label="Send watched changes"
+                description="Send local watched marks and completed plays to this provider."
+                checked={connection.export_watched_enabled}
+                disabled={isBusy}
+                onChange={(checked) => updateConnection.mutate({ export_watched_enabled: checked })}
+              />
+            ) : null}
+            {connection.capabilities.export_unwatched ? (
+              <ToggleRow
+                id={`watch-provider-${providerKey}-export-unwatched`}
+                label="Send unwatched changes"
+                description="When you mark something unwatched, remove matching history from this provider."
+                checked={connection.export_unwatched_enabled}
+                disabled={isBusy}
+                onChange={(checked) =>
+                  updateConnection.mutate({ export_unwatched_enabled: checked })
+                }
+              />
+            ) : null}
             {connection.capabilities.import_favorites ||
             connection.capabilities.export_favorites ? (
               <ToggleRow
@@ -704,14 +749,16 @@ function WatchProviderCard({ providerKey }: { providerKey: string }) {
                 }
               />
             ) : null}
-            <ToggleRow
-              id={`watch-provider-${providerKey}-scrobble`}
-              label="Scrobble playback"
-              description="Report starts, pauses, resumes, and stops live during playback."
-              checked={connection.scrobble_enabled}
-              disabled={isBusy}
-              onChange={(checked) => updateConnection.mutate({ scrobble_enabled: checked })}
-            />
+            {connection.capabilities.scrobble_playback ? (
+              <ToggleRow
+                id={`watch-provider-${providerKey}-scrobble`}
+                label="Scrobble playback"
+                description="Report starts, pauses, resumes, and stops live during playback."
+                checked={connection.scrobble_enabled}
+                disabled={isBusy}
+                onChange={(checked) => updateConnection.mutate({ scrobble_enabled: checked })}
+              />
+            ) : null}
           </div>
         </div>
       ) : null}

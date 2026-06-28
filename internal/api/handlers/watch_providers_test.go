@@ -32,7 +32,7 @@ func (s stubWatchProviderService) StartDeviceAuth(context.Context, int, string, 
 func (s stubWatchProviderService) PollDeviceAuth(context.Context, int, string, string, string) (watchsync.Connection, error) {
 	return watchsync.Connection{}, nil
 }
-func (s stubWatchProviderService) ConnectAPIKey(context.Context, int, string, string, string) (watchsync.Connection, error) {
+func (s stubWatchProviderService) ConnectAPIKey(context.Context, int, string, string, string, string) (watchsync.Connection, error) {
 	return watchsync.Connection{}, nil
 }
 func (s stubWatchProviderService) GetConnectionStatus(context.Context, int, string, string) (watchsync.ConnectionStatus, error) {

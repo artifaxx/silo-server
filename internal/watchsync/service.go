@@ -496,6 +496,7 @@ func (s *Service) ConnectAPIKey(
 	profileID string,
 	providerKey string,
 	apiKey string,
+	baseURL string,
 ) (Connection, error) {
 	if userID <= 0 {
 		return Connection{}, fmt.Errorf("user id is required")
@@ -504,6 +505,7 @@ func (s *Service) ConnectAPIKey(
 		return Connection{}, fmt.Errorf("profile id is required")
 	}
 	apiKey = strings.TrimSpace(apiKey)
+	baseURL = strings.TrimSpace(baseURL)
 	if apiKey == "" {
 		return Connection{}, fmt.Errorf("api key is required")
 	}
@@ -511,12 +513,25 @@ func (s *Service) ConnectAPIKey(
 	if !ok {
 		return Connection{}, fmt.Errorf("unknown provider %q", providerKey)
 	}
-	authProvider, ok := provider.(APIKeyAuthProvider)
-	if !ok {
-		return Connection{}, fmt.Errorf("provider %q does not support api-key auth", providerKey)
-	}
 
-	tokens, account, err := authProvider.ConnectWithAPIKey(ctx, apiKey)
+	var tokens TokenSet
+	var account ProviderAccount
+	var err error
+	if baseURLProvider, ok := provider.(APIKeyWithBaseURLAuthProvider); ok {
+		if baseURL == "" {
+			return Connection{}, fmt.Errorf("base url is required")
+		}
+		tokens, account, err = baseURLProvider.ConnectWithAPIKeyAndBaseURL(ctx, apiKey, baseURL)
+	} else {
+		authProvider, ok := provider.(APIKeyAuthProvider)
+		if !ok {
+			return Connection{}, fmt.Errorf("provider %q does not support api-key auth", providerKey)
+		}
+		if baseURL != "" {
+			return Connection{}, fmt.Errorf("provider %q does not accept base_url", providerKey)
+		}
+		tokens, account, err = authProvider.ConnectWithAPIKey(ctx, apiKey)
+	}
 	if err != nil {
 		return Connection{}, err
 	}
@@ -1748,6 +1763,9 @@ func scrobbleEventFromSession(session ScrobbleSession, conn Connection, occurred
 
 func authMethodOf(provider Provider) string {
 	if _, ok := provider.(APIKeyAuthProvider); ok {
+		return AuthMethodAPIKey
+	}
+	if _, ok := provider.(APIKeyWithBaseURLAuthProvider); ok {
 		return AuthMethodAPIKey
 	}
 	return AuthMethodDeviceCode

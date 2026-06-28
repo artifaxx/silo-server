@@ -65,6 +65,13 @@ type APIKeyAuthProvider interface {
 	ConnectWithAPIKey(ctx context.Context, apiKey string) (TokenSet, ProviderAccount, error)
 }
 
+// APIKeyWithBaseURLAuthProvider is implemented by self-hosted providers that
+// need a per-connection base URL in addition to the API key or webhook token.
+// The normalized base URL is stored on Connection.ProviderAccountID.
+type APIKeyWithBaseURLAuthProvider interface {
+	ConnectWithAPIKeyAndBaseURL(ctx context.Context, apiKey, baseURL string) (TokenSet, ProviderAccount, error)
+}
+
 type WatchedImporter interface {
 	FetchWatched(ctx context.Context, cfg ServerConfig, conn Connection) ([]RemoteWatch, error)
 }
