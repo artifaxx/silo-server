@@ -19,7 +19,7 @@ No Yamtrack changes are required. Silo's plugin SDK does not expose a watch-prov
 - **Play** (`ScrobbleStart`) marks media in-progress in Yamtrack (movies get `IN_PROGRESS`; TV show/season promoted to in-progress).
 - **Stop** (`ScrobbleStop`) marks completed playback as watched when `Completed=true`.
 - Per-profile configuration: Yamtrack base URL + webhook token (from Yamtrack Integrations settings).
-- Deploy from the `artifaxx/silo-server` fork until upstream merge; update the Titan `silo` stack image when ready.
+- Deploy from the `artifaxx/silo-server` fork until upstream merge.
 
 ## Non-Goals
 
@@ -261,7 +261,7 @@ Follow MDBList's API-key connect flow in the frontend watch provider settings.
 - `httptest.Server` receives expected POST body on `Start` and `Stop`.
 - Assert path includes token segment.
 
-**Manual (Titan stack):**
+**Manual:**
 
 1. Configure Yamtrack Jellyfin webhook token in Silo Watch Providers.
 2. Play a movie in Silo → verify Yamtrack shows in-progress.
@@ -273,11 +273,10 @@ Follow MDBList's API-key connect flow in the frontend watch provider settings.
 Until upstream accepts a PR to [Silo-Server/silo-server](https://github.com/Silo-Server/silo-server):
 
 1. Implement on `artifaxx/silo-server`.
-2. Build container image from fork (GHCR or local registry).
-3. Update Titan `~/stack/silo/compose.yaml` image reference.
-4. Optionally open upstream PR for merge into official image (`ghcr.io/silo-server/silo-server`).
+2. Build and deploy a container image from the fork (GHCR or local registry).
+3. Optionally open upstream PR for merge into official image (`ghcr.io/silo-server/silo-server`).
 
-Yamtrack stack (`~/stack/yamtrack/`) requires no changes — reuse existing Jellyfin integration URL and token.
+Yamtrack requires no changes — reuse existing Jellyfin integration URL and token.
 
 ## Risks & Mitigations
 
