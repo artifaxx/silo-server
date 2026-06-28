@@ -159,10 +159,22 @@ export function pollWatchProviderDeviceAuth(provider: string, authSessionId: str
   });
 }
 
-export function connectWatchProviderAPIKey(provider: string, apiKey: string) {
+export type WatchProviderAPIKeyConnectInput = {
+  api_key: string;
+  base_url?: string;
+};
+
+export function connectWatchProviderAPIKey(
+  provider: string,
+  input: string | WatchProviderAPIKeyConnectInput,
+) {
+  const body =
+    typeof input === "string"
+      ? { api_key: input }
+      : { api_key: input.api_key, base_url: input.base_url };
   return api<WatchProviderConnection>(`/watch-providers/${provider}/auth/api-key`, {
     method: "POST",
-    body: JSON.stringify({ api_key: apiKey }),
+    body: JSON.stringify(body),
   });
 }
 
@@ -248,7 +260,8 @@ export function usePollWatchProviderDeviceAuth(provider: string) {
 export function useConnectWatchProviderAPIKey(provider: string) {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (apiKey: string) => connectWatchProviderAPIKey(provider, apiKey),
+    mutationFn: (input: string | WatchProviderAPIKeyConnectInput) =>
+      connectWatchProviderAPIKey(provider, input),
     onSuccess: (connection) => {
       const profileId = getActiveProfileId();
       queryClient.setQueryData(watchProviderKeys.connection(profileId, provider), connection);
