@@ -6,6 +6,7 @@
 Watch provider cards now follow advertised capabilities, so a plugin that only scrobbles (such as Yamtrack) does not show history import, export, or Sync now.
 - Hides import/export toggles and last-sync stats when those capabilities are off.
 - Live scrobble events include a `completed` flag in plugin media metadata so scrobble-only plugins can tell a finished stop from an early stop.
+- Yamtrack itself is not a builtin. Transfer `cursor/yamtrack-plugin-9af6` to [`artifaxx/silo-plugin-yamtrack`](https://github.com/artifaxx/silo-plugin-yamtrack).
 
 ## 2026-08-16
 
