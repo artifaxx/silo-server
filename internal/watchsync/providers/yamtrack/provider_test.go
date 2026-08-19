@@ -230,7 +230,9 @@ func TestStopCompletedEpisodeUsesEpisodeTVDB(t *testing.T) {
 	}, watchsync.ScrobbleEvent{
 		Kind:          historyimport.KindEpisode,
 		TVDBID:        "303821",
+		TMDBID:        "62085",
 		IMDbID:        "tt0583459",
+		SeriesTMDBID:  "1396",
 		SeriesTVDBID:  "75930",
 		SeasonNumber:  1,
 		EpisodeNumber: 1,
@@ -245,8 +247,33 @@ func TestStopCompletedEpisodeUsesEpisodeTVDB(t *testing.T) {
 	if got.Item.ProviderIds["Tvdb"] != "303821" {
 		t.Fatalf("tvdb = %q, want episode id not series id", got.Item.ProviderIds["Tvdb"])
 	}
+	if got.Item.ProviderIds["Tmdb"] != "1396" {
+		t.Fatalf("tmdb = %q, want series id", got.Item.ProviderIds["Tmdb"])
+	}
 	if got.Item.ParentIndexNumber != 1 || got.Item.IndexNumber != 1 {
 		t.Fatalf("season/episode = %d/%d", got.Item.ParentIndexNumber, got.Item.IndexNumber)
+	}
+}
+
+func TestStopIncompleteMovieMarksUnplayed(t *testing.T) {
+	var got jellyfinWebhookPayload
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := json.NewDecoder(r.Body).Decode(&got); err != nil {
+			t.Errorf("decode: %v", err)
+		}
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	p := NewProvider(server.Client())
+	err := p.Stop(context.Background(), watchsync.ServerConfig{}, watchsync.Connection{
+		AccessToken: server.URL + "/webhook/jellyfin/tok",
+	}, watchsync.ScrobbleEvent{Kind: historyimport.KindMovie, TMDBID: "603", Completed: false})
+	if err != nil {
+		t.Fatalf("stop: %v", err)
+	}
+	if got.Event != "Stop" || got.Item.UserData.Played {
+		t.Fatalf("payload = %#v, want Stop with Played false", got)
 	}
 }
 

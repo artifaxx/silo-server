@@ -600,38 +600,38 @@ function WatchProviderCard({ providerKey }: { providerKey: string }) {
 
           {historySync ? (
             <div className="bg-background/40 rounded-xl px-3 py-3 ring-1 ring-white/5 ring-inset">
-            <div className="grid grid-cols-2 gap-3 sm:hidden">
-              <StatCell
-                label="Last imported"
-                value={`${runInfo.imported.watched.toLocaleString()} watched · ${runInfo.imported.progress.toLocaleString()} progress · ${runInfo.imported.favorites.toLocaleString()} favorites · ${runInfo.imported.watchlist.toLocaleString()} watchlist`}
-              />
-              <StatCell
-                label="Last exported"
-                value={`${(runInfo.exported.watched + runInfo.exported.favorites + runInfo.exported.favoriteRemovals + runInfo.exported.watchlist + runInfo.exported.watchlistRemovals).toLocaleString()} sent`}
-              />
-            </div>
-            <div className="hidden grid-cols-5 gap-3 sm:grid">
-              <StatCell
-                label="Watched"
-                value={`${runInfo.imported.watched.toLocaleString()} imported`}
-              />
-              <StatCell
-                label="Progress"
-                value={`${runInfo.imported.progress.toLocaleString()} resumed`}
-              />
-              <StatCell
-                label="Favorites"
-                value={`${runInfo.imported.favorites.toLocaleString()} imported`}
-              />
-              <StatCell
-                label="Watchlist"
-                value={`${runInfo.imported.watchlist.toLocaleString()} imported`}
-              />
-              <StatCell
-                label="Exported"
-                value={`${(runInfo.exported.watched + runInfo.exported.favorites + runInfo.exported.favoriteRemovals + runInfo.exported.watchlist + runInfo.exported.watchlistRemovals).toLocaleString()} sent`}
-              />
-            </div>
+              <div className="grid grid-cols-2 gap-3 sm:hidden">
+                <StatCell
+                  label="Last imported"
+                  value={`${runInfo.imported.watched.toLocaleString()} watched · ${runInfo.imported.progress.toLocaleString()} progress · ${runInfo.imported.favorites.toLocaleString()} favorites · ${runInfo.imported.watchlist.toLocaleString()} watchlist`}
+                />
+                <StatCell
+                  label="Last exported"
+                  value={`${(runInfo.exported.watched + runInfo.exported.favorites + runInfo.exported.favoriteRemovals + runInfo.exported.watchlist + runInfo.exported.watchlistRemovals).toLocaleString()} sent`}
+                />
+              </div>
+              <div className="hidden grid-cols-5 gap-3 sm:grid">
+                <StatCell
+                  label="Watched"
+                  value={`${runInfo.imported.watched.toLocaleString()} imported`}
+                />
+                <StatCell
+                  label="Progress"
+                  value={`${runInfo.imported.progress.toLocaleString()} resumed`}
+                />
+                <StatCell
+                  label="Favorites"
+                  value={`${runInfo.imported.favorites.toLocaleString()} imported`}
+                />
+                <StatCell
+                  label="Watchlist"
+                  value={`${runInfo.imported.watchlist.toLocaleString()} imported`}
+                />
+                <StatCell
+                  label="Exported"
+                  value={`${(runInfo.exported.watched + runInfo.exported.favorites + runInfo.exported.favoriteRemovals + runInfo.exported.watchlist + runInfo.exported.watchlistRemovals).toLocaleString()} sent`}
+                />
+              </div>
             </div>
           ) : null}
 

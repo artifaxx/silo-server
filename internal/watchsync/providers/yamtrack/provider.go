@@ -198,8 +198,8 @@ type jellyfinWebhookItem struct {
 	Name              string            `json:"Name,omitempty"`
 	SeriesName        string            `json:"SeriesName,omitempty"`
 	ProductionYear    int               `json:"ProductionYear,omitempty"`
-	ParentIndexNumber int               `json:"ParentIndexNumber,omitempty"`
-	IndexNumber       int               `json:"IndexNumber,omitempty"`
+	ParentIndexNumber int               `json:"ParentIndexNumber"`
+	IndexNumber       int               `json:"IndexNumber"`
 	ProviderIds       map[string]string `json:"ProviderIds"`
 	UserData          jellyfinUserData  `json:"UserData"`
 }
@@ -224,9 +224,10 @@ func buildJellyfinPayload(event watchsync.ScrobbleEvent, jellyfinEvent string, p
 		payload.Item.Type = "Episode"
 		payload.Item.ParentIndexNumber = event.SeasonNumber
 		payload.Item.IndexNumber = event.EpisodeNumber
+		// Yamtrack matches TV on episode TVDB/IMDb, and treats Tmdb as the show id.
 		setProviderID(payload.Item.ProviderIds, "Tvdb", event.TVDBID)
 		setProviderID(payload.Item.ProviderIds, "Imdb", event.IMDbID)
-		setProviderID(payload.Item.ProviderIds, "Tmdb", event.TMDBID)
+		setProviderID(payload.Item.ProviderIds, "Tmdb", event.SeriesTMDBID)
 	default:
 		if event.TMDBID == "" && event.IMDbID == "" {
 			return jellyfinWebhookPayload{}, errors.New("yamtrack movie scrobble needs a TMDB or IMDb id")
