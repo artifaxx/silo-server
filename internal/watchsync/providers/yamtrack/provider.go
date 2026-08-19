@@ -128,7 +128,7 @@ func (p *Provider) post(ctx context.Context, webhookURL string, body []byte, pro
 	if err != nil {
 		return fmt.Errorf("send yamtrack webhook request: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	limited := io.LimitReader(resp.Body, maxErrorBodyBytes)
 	_, _ = io.Copy(io.Discard, limited)
 

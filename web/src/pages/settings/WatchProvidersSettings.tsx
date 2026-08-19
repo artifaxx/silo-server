@@ -272,9 +272,7 @@ function APIKeyBlock({
           type="password"
           autoComplete="off"
           spellCheck={false}
-          placeholder={
-            isYamtrack ? "https://yamtrack.example.com/webhook/jellyfin/…" : "API key"
-          }
+          placeholder={isYamtrack ? "https://yamtrack.example.com/webhook/jellyfin/…" : "API key"}
           value={value}
           onChange={(event) => setValue(event.target.value)}
           className="font-mono"
@@ -653,7 +651,9 @@ function WatchProviderCard({ providerKey }: { providerKey: string }) {
                 description={`Use newer ${displayName} resume points when local progress is older.`}
                 checked={connection.import_progress_enabled}
                 disabled={isBusy}
-                onChange={(checked) => updateConnection.mutate({ import_progress_enabled: checked })}
+                onChange={(checked) =>
+                  updateConnection.mutate({ import_progress_enabled: checked })
+                }
               />
             ) : null}
             {connection.capabilities.export_watched ? (
@@ -673,7 +673,9 @@ function WatchProviderCard({ providerKey }: { providerKey: string }) {
                 description="When you mark something unwatched, remove matching history from this provider."
                 checked={connection.export_unwatched_enabled}
                 disabled={isBusy}
-                onChange={(checked) => updateConnection.mutate({ export_unwatched_enabled: checked })}
+                onChange={(checked) =>
+                  updateConnection.mutate({ export_unwatched_enabled: checked })
+                }
               />
             ) : null}
             {connection.capabilities.import_favorites ||
