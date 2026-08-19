@@ -212,27 +212,49 @@ function AuthCodeBlock({
   );
 }
 
+function hasHistorySync(capabilities: WatchProviderConnection["capabilities"]) {
+  return (
+    capabilities.import_watched ||
+    capabilities.import_progress ||
+    capabilities.export_watched ||
+    capabilities.export_unwatched ||
+    capabilities.import_favorites ||
+    capabilities.export_favorites ||
+    capabilities.import_watchlist ||
+    capabilities.export_watchlist
+  );
+}
+
 function APIKeyBlock({
   displayName,
+  providerKey,
   pending,
   onSubmit,
   onCancel,
 }: {
   displayName: string;
+  providerKey: string;
   pending: boolean;
   onSubmit: (apiKey: string) => void;
   onCancel: () => void;
 }) {
   const [value, setValue] = useState("");
   const trimmed = value.trim();
+  const isYamtrack = providerKey === "yamtrack";
 
   return (
     <div className="border-primary/30 bg-primary/5 rounded-xl border border-dashed p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-sm font-medium">Paste your {displayName} API key</div>
+          <div className="text-sm font-medium">
+            {isYamtrack
+              ? "Paste your Yamtrack Jellyfin webhook URL"
+              : `Paste your ${displayName} API key`}
+          </div>
           <div className="text-muted-foreground mt-0.5 text-xs leading-snug">
-            Find it under your account settings on the {displayName} site.
+            {isYamtrack
+              ? "Copy it from Yamtrack → Account settings → Integrations. It looks like https://yamtrack.example.com/webhook/jellyfin/…"
+              : `Find it under your account settings on the ${displayName} site.`}
           </div>
         </div>
         <Button
@@ -250,7 +272,9 @@ function APIKeyBlock({
           type="password"
           autoComplete="off"
           spellCheck={false}
-          placeholder="API key"
+          placeholder={
+            isYamtrack ? "https://yamtrack.example.com/webhook/jellyfin/…" : "API key"
+          }
           value={value}
           onChange={(event) => setValue(event.target.value)}
           className="font-mono"
@@ -377,6 +401,7 @@ function WatchProviderCard({ providerKey }: { providerKey: string }) {
     deleteConnection.isPending;
   const displayName = connection.display_name;
   const usesAPIKey = connection.auth_method === WatchProviderAuthMethod.APIKey;
+  const historySync = hasHistorySync(connection.capabilities);
   const showAuth = Boolean(authSession) && !connection.connected;
   const showAPIKey = usesAPIKey && apiKeyPrompt && !connection.connected;
   const runInfo = connection.connected ? deriveRunInfo(connection, latestRun) : null;
@@ -404,12 +429,20 @@ function WatchProviderCard({ providerKey }: { providerKey: string }) {
 
   const subtitleText = (() => {
     if (showAuth) return "Waiting for you to enter the code below.";
-    if (showAPIKey) return `Paste your ${displayName} API key to finish connecting.`;
+    if (showAPIKey) {
+      return providerKey === "yamtrack"
+        ? "Paste your Yamtrack Jellyfin webhook URL to finish connecting."
+        : `Paste your ${displayName} API key to finish connecting.`;
+    }
     if (connection.connected) {
       const username = connection.provider_username || displayName;
+      if (!historySync) return `${username} · Scrobbling playback`;
       return `${username} · ${formatLastSync(connection, latestRun)}`;
     }
     if (!connection.credentials_configured) return "Server credentials required.";
+    if (providerKey === "yamtrack") {
+      return "Connect with your Yamtrack Jellyfin webhook URL to scrobble playback.";
+    }
     if (usesAPIKey)
       return `Connect with your ${displayName} API key to import watch history and scrobble playback.`;
     return "Connect to start importing watch history and scrobbling playback.";
@@ -481,21 +514,23 @@ function WatchProviderCard({ providerKey }: { providerKey: string }) {
         <div className="flex shrink-0 gap-2 sm:justify-end">
           {showAuth || showAPIKey ? null : connection.connected ? (
             <>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                disabled={isBusy || syncDisabled}
-                onClick={() => syncNow.mutate()}
-                className="flex-1 sm:flex-none"
-              >
-                {syncNow.isPending || syncRunning ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className="h-4 w-4" />
-                )}
-                {syncButtonLabel}
-              </Button>
+              {historySync ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={isBusy || syncDisabled}
+                  onClick={() => syncNow.mutate()}
+                  className="flex-1 sm:flex-none"
+                >
+                  {syncNow.isPending || syncRunning ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <RefreshCw className="h-4 w-4" />
+                  )}
+                  {syncButtonLabel}
+                </Button>
+              ) : null}
               <Button
                 type="button"
                 variant="outline"
@@ -549,6 +584,7 @@ function WatchProviderCard({ providerKey }: { providerKey: string }) {
         <div className="mt-4">
           <APIKeyBlock
             displayName={displayName}
+            providerKey={providerKey}
             pending={connectAPIKey.isPending}
             onSubmit={handleSubmitAPIKey}
             onCancel={handleCancelAPIKey}
@@ -562,7 +598,8 @@ function WatchProviderCard({ providerKey }: { providerKey: string }) {
             <ErrorBanner message={runInfo.errorMessage} hint={runInfo.errorHint} />
           ) : null}
 
-          <div className="bg-background/40 rounded-xl px-3 py-3 ring-1 ring-white/5 ring-inset">
+          {historySync ? (
+            <div className="bg-background/40 rounded-xl px-3 py-3 ring-1 ring-white/5 ring-inset">
             <div className="grid grid-cols-2 gap-3 sm:hidden">
               <StatCell
                 label="Last imported"
@@ -595,41 +632,50 @@ function WatchProviderCard({ providerKey }: { providerKey: string }) {
                 value={`${(runInfo.exported.watched + runInfo.exported.favorites + runInfo.exported.favoriteRemovals + runInfo.exported.watchlist + runInfo.exported.watchlistRemovals).toLocaleString()} sent`}
               />
             </div>
-          </div>
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-1 gap-x-6 gap-y-1 sm:grid-cols-2">
-            <ToggleRow
-              id={`watch-provider-${providerKey}-import-watched`}
-              label="Import watched history"
-              description={`Bring completed ${displayName} plays into this profile.`}
-              checked={connection.import_watched_enabled}
-              disabled={isBusy}
-              onChange={(checked) => updateConnection.mutate({ import_watched_enabled: checked })}
-            />
-            <ToggleRow
-              id={`watch-provider-${providerKey}-import-progress`}
-              label="Import paused progress"
-              description={`Use newer ${displayName} resume points when local progress is older.`}
-              checked={connection.import_progress_enabled}
-              disabled={isBusy}
-              onChange={(checked) => updateConnection.mutate({ import_progress_enabled: checked })}
-            />
-            <ToggleRow
-              id={`watch-provider-${providerKey}-export-watched`}
-              label="Send watched changes"
-              description="Send local watched marks and completed plays to this provider."
-              checked={connection.export_watched_enabled}
-              disabled={isBusy}
-              onChange={(checked) => updateConnection.mutate({ export_watched_enabled: checked })}
-            />
-            <ToggleRow
-              id={`watch-provider-${providerKey}-export-unwatched`}
-              label="Send unwatched changes"
-              description="When you mark something unwatched, remove matching history from this provider."
-              checked={connection.export_unwatched_enabled}
-              disabled={isBusy}
-              onChange={(checked) => updateConnection.mutate({ export_unwatched_enabled: checked })}
-            />
+            {connection.capabilities.import_watched ? (
+              <ToggleRow
+                id={`watch-provider-${providerKey}-import-watched`}
+                label="Import watched history"
+                description={`Bring completed ${displayName} plays into this profile.`}
+                checked={connection.import_watched_enabled}
+                disabled={isBusy}
+                onChange={(checked) => updateConnection.mutate({ import_watched_enabled: checked })}
+              />
+            ) : null}
+            {connection.capabilities.import_progress ? (
+              <ToggleRow
+                id={`watch-provider-${providerKey}-import-progress`}
+                label="Import paused progress"
+                description={`Use newer ${displayName} resume points when local progress is older.`}
+                checked={connection.import_progress_enabled}
+                disabled={isBusy}
+                onChange={(checked) => updateConnection.mutate({ import_progress_enabled: checked })}
+              />
+            ) : null}
+            {connection.capabilities.export_watched ? (
+              <ToggleRow
+                id={`watch-provider-${providerKey}-export-watched`}
+                label="Send watched changes"
+                description="Send local watched marks and completed plays to this provider."
+                checked={connection.export_watched_enabled}
+                disabled={isBusy}
+                onChange={(checked) => updateConnection.mutate({ export_watched_enabled: checked })}
+              />
+            ) : null}
+            {connection.capabilities.export_unwatched ? (
+              <ToggleRow
+                id={`watch-provider-${providerKey}-export-unwatched`}
+                label="Send unwatched changes"
+                description="When you mark something unwatched, remove matching history from this provider."
+                checked={connection.export_unwatched_enabled}
+                disabled={isBusy}
+                onChange={(checked) => updateConnection.mutate({ export_unwatched_enabled: checked })}
+              />
+            ) : null}
             {connection.capabilities.import_favorites ||
             connection.capabilities.export_favorites ? (
               <ToggleRow
@@ -704,14 +750,20 @@ function WatchProviderCard({ providerKey }: { providerKey: string }) {
                 }
               />
             ) : null}
-            <ToggleRow
-              id={`watch-provider-${providerKey}-scrobble`}
-              label="Scrobble playback"
-              description="Report starts, pauses, resumes, and stops live during playback."
-              checked={connection.scrobble_enabled}
-              disabled={isBusy}
-              onChange={(checked) => updateConnection.mutate({ scrobble_enabled: checked })}
-            />
+            {connection.capabilities.scrobble_playback ? (
+              <ToggleRow
+                id={`watch-provider-${providerKey}-scrobble`}
+                label="Scrobble playback"
+                description={
+                  providerKey === "yamtrack"
+                    ? "Report playback starts and completed watches to Yamtrack."
+                    : "Report starts, pauses, resumes, and stops live during playback."
+                }
+                checked={connection.scrobble_enabled}
+                disabled={isBusy}
+                onChange={(checked) => updateConnection.mutate({ scrobble_enabled: checked })}
+              />
+            ) : null}
           </div>
         </div>
       ) : null}

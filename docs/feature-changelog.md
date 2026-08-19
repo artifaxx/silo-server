@@ -1,5 +1,13 @@
 # Feature Changelog
 
+## 2026-08-19
+
+### Scrobble playback to Yamtrack
+Profiles can connect a self-hosted Yamtrack instance and scrobble movie and episode playback as it happens.
+- Adds Yamtrack as a watch provider. Paste the Jellyfin webhook URL from Yamtrack account settings; Silo reports starts and completed stops using that existing webhook.
+- Leaves history import, progress sync, favorites, and watchlists off until Yamtrack has a stable write API for them.
+- Hides import/export controls on watch providers that only scrobble, so Yamtrack's settings card matches what it can actually do.
+
 ## 2026-08-16
 
 ### Let viewers turn the intro prompt off

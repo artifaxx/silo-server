@@ -299,7 +299,16 @@ export const ADMIN_SETTINGS_GROUPS: AdminSettingsSearchGroup[] = [
         id: "watch-providers",
         label: "Watch Providers",
         description: "Provider integrations for watch history and scrobbling.",
-        keywords: ["trakt", "simkl", "import", "export", "scrobble", "watch history", "favorites"],
+        keywords: [
+          "trakt",
+          "simkl",
+          "yamtrack",
+          "import",
+          "export",
+          "scrobble",
+          "watch history",
+          "favorites",
+        ],
         settings: settingIndex(
           "Trakt Client ID",
           "Trakt Client Secret",
