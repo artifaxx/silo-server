@@ -227,33 +227,28 @@ function hasHistorySync(capabilities: WatchProviderConnection["capabilities"]) {
 
 function APIKeyBlock({
   displayName,
-  providerKey,
+  scrobbleOnly,
   pending,
   onSubmit,
   onCancel,
 }: {
   displayName: string;
-  providerKey: string;
+  scrobbleOnly: boolean;
   pending: boolean;
   onSubmit: (apiKey: string) => void;
   onCancel: () => void;
 }) {
   const [value, setValue] = useState("");
   const trimmed = value.trim();
-  const isYamtrack = providerKey === "yamtrack";
 
   return (
     <div className="border-primary/30 bg-primary/5 rounded-xl border border-dashed p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-sm font-medium">
-            {isYamtrack
-              ? "Paste your Yamtrack Jellyfin webhook URL"
-              : `Paste your ${displayName} API key`}
-          </div>
+          <div className="text-sm font-medium">{`Paste your ${displayName} API key`}</div>
           <div className="text-muted-foreground mt-0.5 text-xs leading-snug">
-            {isYamtrack
-              ? "Copy it from Yamtrack → Account settings → Integrations. It looks like https://yamtrack.example.com/webhook/jellyfin/…"
+            {scrobbleOnly
+              ? `Find it under your account settings on the ${displayName} site. For some providers this is a webhook URL.`
               : `Find it under your account settings on the ${displayName} site.`}
           </div>
         </div>
@@ -272,7 +267,7 @@ function APIKeyBlock({
           type="password"
           autoComplete="off"
           spellCheck={false}
-          placeholder={isYamtrack ? "https://yamtrack.example.com/webhook/jellyfin/…" : "API key"}
+          placeholder="API key"
           value={value}
           onChange={(event) => setValue(event.target.value)}
           className="font-mono"
@@ -428,9 +423,7 @@ function WatchProviderCard({ providerKey }: { providerKey: string }) {
   const subtitleText = (() => {
     if (showAuth) return "Waiting for you to enter the code below.";
     if (showAPIKey) {
-      return providerKey === "yamtrack"
-        ? "Paste your Yamtrack Jellyfin webhook URL to finish connecting."
-        : `Paste your ${displayName} API key to finish connecting.`;
+      return `Paste your ${displayName} API key to finish connecting.`;
     }
     if (connection.connected) {
       const username = connection.provider_username || displayName;
@@ -438,8 +431,8 @@ function WatchProviderCard({ providerKey }: { providerKey: string }) {
       return `${username} · ${formatLastSync(connection, latestRun)}`;
     }
     if (!connection.credentials_configured) return "Server credentials required.";
-    if (providerKey === "yamtrack") {
-      return "Connect with your Yamtrack Jellyfin webhook URL to scrobble playback.";
+    if (usesAPIKey && !historySync) {
+      return `Connect with your ${displayName} API key to scrobble playback.`;
     }
     if (usesAPIKey)
       return `Connect with your ${displayName} API key to import watch history and scrobble playback.`;
@@ -582,7 +575,7 @@ function WatchProviderCard({ providerKey }: { providerKey: string }) {
         <div className="mt-4">
           <APIKeyBlock
             displayName={displayName}
-            providerKey={providerKey}
+            scrobbleOnly={!historySync}
             pending={connectAPIKey.isPending}
             onSubmit={handleSubmitAPIKey}
             onCancel={handleCancelAPIKey}
@@ -757,9 +750,9 @@ function WatchProviderCard({ providerKey }: { providerKey: string }) {
                 id={`watch-provider-${providerKey}-scrobble`}
                 label="Scrobble playback"
                 description={
-                  providerKey === "yamtrack"
-                    ? "Report playback starts and completed watches to Yamtrack."
-                    : "Report starts, pauses, resumes, and stops live during playback."
+                  historySync
+                    ? "Report starts, pauses, resumes, and stops live during playback."
+                    : "Report playback starts and completed watches."
                 }
                 checked={connection.scrobble_enabled}
                 disabled={isBusy}

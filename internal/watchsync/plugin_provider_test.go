@@ -866,4 +866,16 @@ func TestPluginProviderForwardsLiveScrobbleLifecycle(t *testing.T) {
 	if got := client.applyRequest.GetEvents()[0]; got.GetOperation() != pluginv1.WatchSyncOperation_WATCH_SYNC_OPERATION_SCROBBLE_START || got.GetPositionSeconds() != 12.5 {
 		t.Fatalf("scrobble event = %#v", got)
 	}
+
+	stopID := "scrobble:" + pluginv1.WatchSyncOperation_WATCH_SYNC_OPERATION_SCROBBLE_STOP.String() + ":" + testPlaybackSessionID
+	client.applyResponse = &pluginv1.WatchSyncApplyEventsResponse{Results: []*pluginv1.WatchSyncApplyResult{{
+		EventId: stopID, Status: pluginv1.WatchSyncApplyStatus_WATCH_SYNC_APPLY_STATUS_APPLIED,
+	}}}
+	event.Completed = true
+	if err := provider.Stop(context.Background(), ServerConfig{}, Connection{}, event); err != nil {
+		t.Fatal(err)
+	}
+	if got := client.applyRequest.GetEvents()[0]; !got.GetMedia().GetMetadata().GetFields()["completed"].GetBoolValue() {
+		t.Fatalf("completed stop metadata = %#v", got.GetMedia().GetMetadata())
+	}
 }

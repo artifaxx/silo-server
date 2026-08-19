@@ -343,7 +343,7 @@ const NAV_SECTIONS: NavSection[] = [
         path: "watch-providers",
         label: "Watch Providers",
         icon: Cloud,
-        description: "Trakt, Simkl, and MDBList watch history, plus Yamtrack scrobbling.",
+        description: "Trakt, Simkl, and MDBList watch history, plus plugin scrobbling.",
         keywords: [
           "trakt",
           "simkl",

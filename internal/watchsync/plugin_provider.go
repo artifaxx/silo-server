@@ -13,6 +13,7 @@ import (
 	pluginv1 "github.com/Silo-Server/silo-plugin-sdk/pkg/pluginproto/silo/plugin/v1"
 	"github.com/Silo-Server/silo-server/internal/historyimport"
 	"github.com/Silo-Server/silo-server/internal/userstore"
+	"google.golang.org/protobuf/types/known/structpb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -577,6 +578,14 @@ func watchEventFromScrobble(event ScrobbleEvent, operation pluginv1.WatchSyncOpe
 	if event.DurationSeconds > 0 {
 		completion = event.PositionSeconds / event.DurationSeconds * 100
 	}
+	media := mediaFromIdentity(event.MediaItemID, event.Kind, "", 0,
+		event.IMDbID, event.TMDBID, event.TVDBID, "", 0,
+		event.SeriesIMDbID, event.SeriesTMDBID, event.SeriesTVDBID, event.SeasonNumber, event.EpisodeNumber)
+	if event.Completed {
+		if metadata, err := structpb.NewStruct(map[string]any{"completed": true}); err == nil {
+			media.Metadata = metadata
+		}
+	}
 	return &pluginv1.WatchSyncEvent{
 		EventId:           eventID,
 		Operation:         operation,
@@ -588,9 +597,7 @@ func watchEventFromScrobble(event ScrobbleEvent, operation pluginv1.WatchSyncOpe
 		DurationSeconds:   event.DurationSeconds,
 		CompletionPercent: completion,
 		ProviderItemKey:   event.ProviderItemKey,
-		Media: mediaFromIdentity(event.MediaItemID, event.Kind, "", 0,
-			event.IMDbID, event.TMDBID, event.TVDBID, "", 0,
-			event.SeriesIMDbID, event.SeriesTMDBID, event.SeriesTVDBID, event.SeasonNumber, event.EpisodeNumber),
+		Media:             media,
 	}
 }
 

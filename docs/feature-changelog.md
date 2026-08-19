@@ -2,11 +2,10 @@
 
 ## 2026-08-19
 
-### Scrobble playback to Yamtrack
-Profiles can connect a self-hosted Yamtrack instance and scrobble movie and episode playback as it happens.
-- Adds Yamtrack as a watch provider. Paste the Jellyfin webhook URL from Yamtrack account settings; Silo reports starts and completed stops using that existing webhook.
-- Leaves history import, progress sync, favorites, and watchlists off until Yamtrack has a stable write API for them.
-- Hides import/export controls on watch providers that only scrobble, so Yamtrack's settings card matches what it can actually do.
+### Hide import/export on scrobble-only watch providers
+Watch provider cards now follow advertised capabilities, so a plugin that only scrobbles (such as Yamtrack) does not show history import, export, or Sync now.
+- Hides import/export toggles and last-sync stats when those capabilities are off.
+- Live scrobble events include a `completed` flag in plugin media metadata so scrobble-only plugins can tell a finished stop from an early stop.
 
 ## 2026-08-16
 

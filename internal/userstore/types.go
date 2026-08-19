@@ -122,7 +122,6 @@ const (
 	WatchHistorySourceTrakt       WatchHistorySource = "trakt"
 	WatchHistorySourceSimkl       WatchHistorySource = "simkl"
 	WatchHistorySourceMDBList     WatchHistorySource = "mdblist"
-	WatchHistorySourceYamtrack    WatchHistorySource = "yamtrack"
 )
 
 // WatchIdentity is the write-once archive payload stored with each history
